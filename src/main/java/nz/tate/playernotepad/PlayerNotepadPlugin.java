@@ -25,12 +25,19 @@
 package nz.tate.playernotepad;
 
 import com.google.inject.Provides;
+import java.awt.Rectangle;
+import java.awt.Shape;
 import java.awt.image.BufferedImage;
+import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 import javax.inject.Inject;
 import javax.inject.Provider;
 import javax.swing.SwingUtilities;
+import net.runelite.api.ChatMessageType;
 import net.runelite.api.Client;
 import net.runelite.api.MenuAction;
 import net.runelite.api.MenuEntry;
@@ -44,11 +51,15 @@ import net.runelite.client.callback.ClientThread;
 import net.runelite.client.config.ConfigManager;
 import net.runelite.client.eventbus.Subscribe;
 import net.runelite.client.events.ConfigChanged;
+import net.runelite.client.input.KeyManager;
+import net.runelite.client.input.MouseManager;
 import net.runelite.client.menus.MenuManager;
 import net.runelite.client.plugins.Plugin;
 import net.runelite.client.plugins.PluginDescriptor;
 import net.runelite.client.ui.ClientToolbar;
 import net.runelite.client.ui.NavigationButton;
+import net.runelite.client.ui.overlay.OverlayManager;
+import net.runelite.client.util.HotkeyListener;
 import net.runelite.client.util.ImageUtil;
 
 @PluginDescriptor(
@@ -78,8 +89,44 @@ public class PlayerNotepadPlugin extends Plugin
 	@Inject
 	private PlayerNotepadConfig config;
 
+	@Inject
+	private MouseManager mouseManager;
+
+	@Inject
+	private KeyManager keyManager;
+
+	@Inject
+	private OverlayManager overlayManager;
+
+	@Inject
+	private AreaSelectOverlay overlay;
+
 	private PlayerNotepadPanel panel;
 	private NavigationButton navButton;
+
+	@lombok.Getter(lombok.AccessLevel.PACKAGE)
+	private AreaSelector selector;
+
+	private final HotkeyListener holdKeyListener = new HotkeyListener(() -> config.selectKey())
+	{
+		@Override
+		public void hotkeyPressed()
+		{
+			if (selector != null)
+			{
+				selector.setHeld(true);
+			}
+		}
+
+		@Override
+		public void hotkeyReleased()
+		{
+			if (selector != null)
+			{
+				selector.setHeld(false);
+			}
+		}
+	};
 
 	/**
 	 * Player names by menu identifier, captured when the menu opens, so the click still works
@@ -96,7 +143,8 @@ public class PlayerNotepadPlugin extends Plugin
 	@Override
 	protected void startUp()
 	{
-		panel = new PlayerNotepadPanel(config.notes(), this::saveNotes);
+		selector = new AreaSelector(this::onAreaSelected);
+		panel = new PlayerNotepadPanel(config.notes(), this::saveNotes, selector::arm);
 
 		BufferedImage icon = ImageUtil.loadImageResource(getClass(), "icon.png");
 		navButton = NavigationButton.builder()
@@ -106,6 +154,11 @@ public class PlayerNotepadPlugin extends Plugin
 			.panel(panel)
 			.build();
 		clientToolbar.addNavigation(navButton);
+
+		mouseManager.registerMouseListener(selector);
+		keyManager.registerKeyListener(selector);
+		keyManager.registerKeyListener(holdKeyListener);
+		overlayManager.add(overlay);
 
 		if (config.playerOption())
 		{
@@ -117,6 +170,11 @@ public class PlayerNotepadPlugin extends Plugin
 	protected void shutDown()
 	{
 		clientThread.invoke(() -> menuManager.get().removePlayerMenuItem(ADD_OPTION));
+		overlayManager.remove(overlay);
+		keyManager.unregisterKeyListener(holdKeyListener);
+		keyManager.unregisterKeyListener(selector);
+		mouseManager.unregisterMouseListener(selector);
+		selector = null;
 		clientToolbar.removeNavigation(navButton);
 		panel.flush();
 		panel = null;
@@ -206,6 +264,69 @@ public class PlayerNotepadPlugin extends Plugin
 		String name = player != null ? player.getName() : playerIndexName.get(event.getId());
 		playerIndexName.clear();
 		addName(name);
+	}
+
+	/**
+	 * Other players whose on-screen model touches {@code area}, left to right. Must be called on
+	 * the client thread.
+	 */
+	List<Player> playersInside(Rectangle area)
+	{
+		Player local = client.getLocalPlayer();
+		Map<Player, Double> found = new HashMap<>();
+		for (Player p : client.getTopLevelWorldView().players())
+		{
+			if (p == null || p == local || p.getName() == null)
+			{
+				continue;
+			}
+
+			Shape hull = p.getConvexHull();
+			if (hull != null && hull.intersects(area))
+			{
+				found.put(p, hull.getBounds2D().getCenterX());
+			}
+		}
+
+		List<Player> ordered = new ArrayList<>(found.keySet());
+		ordered.sort(Comparator.comparingDouble(found::get));
+		return ordered;
+	}
+
+	/** Called on the AWT thread when a drag finishes. */
+	private void onAreaSelected(Rectangle area)
+	{
+		clientThread.invoke(() ->
+		{
+			List<String> names = playersInside(area).stream()
+				.map(Player::getName)
+				.collect(Collectors.toList());
+			if (names.isEmpty())
+			{
+				chat("Player Notepad: no players in that area.");
+				return;
+			}
+
+			final boolean skipDuplicates = config.skipDuplicates();
+			SwingUtilities.invokeLater(() ->
+			{
+				if (panel == null)
+				{
+					return;
+				}
+
+				int added = panel.addNames(names, skipDuplicates);
+				int skipped = names.size() - added;
+				String msg = "Player Notepad: added " + added + (added == 1 ? " player" : " players")
+					+ (skipped > 0 ? " (" + skipped + " already listed)." : ".");
+				clientThread.invoke(() -> chat(msg));
+			});
+		});
+	}
+
+	private void chat(String message)
+	{
+		client.addChatMessage(ChatMessageType.GAMEMESSAGE, "", message, null);
 	}
 
 	private void addName(String name)

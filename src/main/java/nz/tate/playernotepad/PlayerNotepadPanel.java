@@ -25,6 +25,8 @@
 package nz.tate.playernotepad;
 
 import java.awt.BorderLayout;
+import java.awt.GridLayout;
+import java.util.List;
 import java.util.function.Consumer;
 import javax.swing.BorderFactory;
 import javax.swing.JButton;
@@ -53,7 +55,7 @@ class PlayerNotepadPanel extends PluginPanel
 	private final Consumer<String> saver;
 	private final Timer saveTimer;
 
-	PlayerNotepadPanel(String initialText, Consumer<String> saver)
+	PlayerNotepadPanel(String initialText, Consumer<String> saver, Runnable onSelectArea)
 	{
 		// No wrapping scroll pane: the text area brings its own, and fills the sidebar's height.
 		super(false);
@@ -81,10 +83,19 @@ class PlayerNotepadPanel extends PluginPanel
 		scroll.setBorder(BorderFactory.createLineBorder(ColorScheme.MEDIUM_GRAY_COLOR));
 		add(scroll, BorderLayout.CENTER);
 
+		JButton selectArea = new JButton("Select area");
+		selectArea.setToolTipText("Then drag a box over the game to add every player inside it");
+		selectArea.addActionListener(e -> onSelectArea.run());
+
 		JButton clear = new JButton("Clear");
 		clear.setToolTipText("Remove everything from the notepad");
 		clear.addActionListener(e -> confirmAndClear());
-		add(clear, BorderLayout.SOUTH);
+
+		JPanel buttons = new JPanel(new GridLayout(1, 2, 6, 0));
+		buttons.setOpaque(false);
+		buttons.add(selectArea);
+		buttons.add(clear);
+		add(buttons, BorderLayout.SOUTH);
 
 		// Save shortly after the user stops typing, rather than on every keystroke.
 		saveTimer = new Timer(SAVE_DELAY_MS, e -> save());
@@ -113,12 +124,31 @@ class PlayerNotepadPanel extends PluginPanel
 
 	void addName(String name, boolean skipDuplicates)
 	{
-		String updated = NotepadText.append(textArea.getText(), name, skipDuplicates);
-		if (!updated.equals(textArea.getText()))
+		addNames(List.of(name), skipDuplicates);
+	}
+
+	/** Appends each name in order and returns how many were actually added. */
+	int addNames(List<String> names, boolean skipDuplicates)
+	{
+		String original = textArea.getText();
+		String updated = original;
+		int added = 0;
+		for (String name : names)
+		{
+			String next = NotepadText.append(updated, name, skipDuplicates);
+			if (!next.equals(updated))
+			{
+				added++;
+				updated = next;
+			}
+		}
+
+		if (added > 0)
 		{
 			textArea.setText(updated);
 			textArea.setCaretPosition(updated.length());
 		}
+		return added;
 	}
 
 	/** Writes any pending edit straight away. Called when the plugin shuts down. */

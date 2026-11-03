@@ -27,6 +27,7 @@ package nz.tate.playernotepad;
 import net.runelite.client.config.Config;
 import net.runelite.client.config.ConfigGroup;
 import net.runelite.client.config.ConfigItem;
+import net.runelite.client.config.Keybind;
 
 @ConfigGroup(PlayerNotepadConfig.GROUP)
 public interface PlayerNotepadConfig extends Config
@@ -67,6 +68,18 @@ public interface PlayerNotepadConfig extends Config
 	default boolean skipDuplicates()
 	{
 		return true;
+	}
+
+	@ConfigItem(
+		keyName = "selectKey",
+		name = "Area select hold key",
+		description = "Hold this key and drag on the game to add every player in the box. "
+			+ "The Select area button in the sidebar works without setting one",
+		position = 4
+	)
+	default Keybind selectKey()
+	{
+		return Keybind.NOT_SET;
 	}
 
 	@ConfigItem(
