@@ -64,7 +64,7 @@ import net.runelite.client.util.ImageUtil;
 
 @PluginDescriptor(
 	name = "Player Notepad",
-	description = "Right-click a player to add their name to a notepad in the sidebar",
+	description = "Keep a sidebar notepad of player names, added from the right-click menu or by dragging a box over players",
 	tags = {"notes", "notepad", "players", "names", "list"}
 )
 public class PlayerNotepadPlugin extends Plugin
