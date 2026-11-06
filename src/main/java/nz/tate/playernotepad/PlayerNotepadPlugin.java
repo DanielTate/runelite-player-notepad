@@ -282,7 +282,7 @@ public class PlayerNotepadPlugin extends Plugin
 			}
 
 			Shape hull = p.getConvexHull();
-			if (hull != null && hull.intersects(area))
+			if (hull != null && AreaSelector.touches(hull, area))
 			{
 				found.put(p, hull.getBounds2D().getCenterX());
 			}

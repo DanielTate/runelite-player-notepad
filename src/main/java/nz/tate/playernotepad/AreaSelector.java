@@ -26,8 +26,10 @@ package nz.tate.playernotepad;
 
 import java.awt.Point;
 import java.awt.Rectangle;
+import java.awt.Shape;
 import java.awt.event.KeyEvent;
 import java.awt.event.MouseEvent;
+import java.awt.geom.Area;
 import java.util.function.Consumer;
 import javax.swing.SwingUtilities;
 import net.runelite.client.input.KeyListener;
@@ -103,6 +105,18 @@ class AreaSelector extends MouseAdapter implements KeyListener
 	static boolean bigEnough(Rectangle r)
 	{
 		return r.width >= MIN_SIZE || r.height >= MIN_SIZE;
+	}
+
+	/**
+	 * True when any part of {@code shape} overlaps {@code area}, including when one fully contains
+	 * the other. Goes through {@link Area} because the client's hulls are SimplePolygons, whose
+	 * {@code intersects} only compares ray crossings from the rectangle's corners and so returns
+	 * false once the rectangle swallows the shape whole. A flat drag is widened to one pixel, as an
+	 * empty rectangle never intersects anything.
+	 */
+	static boolean touches(Shape shape, Rectangle area)
+	{
+		return new Area(shape).intersects(area.x, area.y, Math.max(area.width, 1), Math.max(area.height, 1));
 	}
 
 	@Override

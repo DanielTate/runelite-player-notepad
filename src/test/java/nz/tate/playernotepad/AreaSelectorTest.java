@@ -36,6 +36,7 @@ import java.awt.event.MouseEvent;
 import java.util.ArrayList;
 import java.util.List;
 import javax.swing.JPanel;
+import net.runelite.api.geometry.SimplePolygon;
 import org.junit.Test;
 
 public class AreaSelectorTest
@@ -47,6 +48,57 @@ public class AreaSelectorTest
 	private MouseEvent mouse(int id, int x, int y)
 	{
 		return new MouseEvent(source, id, 0, InputEvent.BUTTON1_DOWN_MASK, x, y, 1, false, MouseEvent.BUTTON1);
+	}
+
+	/** A diamond spanning (100,100) to (120,140), built the way the client builds player hulls. */
+	private static SimplePolygon hull()
+	{
+		return new SimplePolygon(new int[]{110, 120, 110, 100}, new int[]{100, 120, 140, 120}, 4);
+	}
+
+	@Test
+	public void playerStaysSelectedAsTheBoxGrowsPastThem()
+	{
+		// Drag down and right from up-left of the player until the box swallows them whole. The
+		// box corner first reaches the diamond's edge just past 106.
+		assertFalse(AreaSelector.touches(hull(), new Rectangle(0, 0, 105, 105)));
+		for (int size = 110; size <= 400; size += 5)
+		{
+			assertTrue("box ending at " + size, AreaSelector.touches(hull(), new Rectangle(0, 0, size, size)));
+		}
+	}
+
+	@Test
+	public void hullFullyInsideBoxIsTouching()
+	{
+		assertTrue(AreaSelector.touches(hull(), new Rectangle(50, 50, 200, 200)));
+	}
+
+	@Test
+	public void boxFullyInsideHullIsTouching()
+	{
+		assertTrue(AreaSelector.touches(hull(), new Rectangle(108, 118, 4, 4)));
+	}
+
+	@Test
+	public void boxOverlappingHullEdgeIsTouching()
+	{
+		assertTrue(AreaSelector.touches(hull(), new Rectangle(115, 115, 50, 10)));
+	}
+
+	@Test
+	public void flatBoxThroughHullIsTouching()
+	{
+		assertTrue(AreaSelector.touches(hull(), new Rectangle(50, 120, 200, 0)));
+		assertTrue(AreaSelector.touches(hull(), new Rectangle(110, 50, 0, 200)));
+	}
+
+	@Test
+	public void boxClearOfHullIsNotTouching()
+	{
+		assertFalse(AreaSelector.touches(hull(), new Rectangle(200, 200, 50, 50)));
+		// Inside the hull's bounding box, but past the diamond's corner.
+		assertFalse(AreaSelector.touches(hull(), new Rectangle(100, 100, 4, 4)));
 	}
 
 	@Test
