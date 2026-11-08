@@ -35,6 +35,9 @@ public interface PlayerNotepadConfig extends Config
 	String GROUP = "playernotepad";
 	String NOTES_KEY = "notes";
 	String PLAYER_OPTION_KEY = "playerOption";
+	String CLAN_ONLY_KEY = "clanOnly";
+	/** The saved notepad pages, as JSON. Replaces {@link #NOTES_KEY} from 1.1. */
+	String BOOK_KEY = "notepads";
 
 	@ConfigItem(
 		keyName = PLAYER_OPTION_KEY,
@@ -82,6 +85,19 @@ public interface PlayerNotepadConfig extends Config
 		return Keybind.NOT_SET;
 	}
 
+	@ConfigItem(
+		keyName = CLAN_ONLY_KEY,
+		name = "Clan members only",
+		description = "Area select only adds players in your clan. Right-clicking a player always adds them. "
+			+ "Also a checkbox in the sidebar",
+		position = 5
+	)
+	default boolean clanOnly()
+	{
+		return false;
+	}
+
+	/** The single notepad of version 1.0, read once to start the first page. */
 	@ConfigItem(
 		keyName = NOTES_KEY,
 		name = "",

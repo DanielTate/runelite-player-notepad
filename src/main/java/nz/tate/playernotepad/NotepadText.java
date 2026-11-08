@@ -102,6 +102,32 @@ final class NotepadText
 		return clean;
 	}
 
+	/** A valid RuneScape name: 1 to 12 letters, digits, spaces, hyphens or underscores. */
+	private static final java.util.regex.Pattern NAME = java.util.regex.Pattern.compile("[A-Za-z0-9 _-]{1,12}");
+
+	/**
+	 * The player names in {@code text}, in order, without repeats: the start of each line, up
+	 * to any note written after it (after " - ", ":" or "("), when that is a valid name.
+	 */
+	static java.util.List<String> names(String text)
+	{
+		java.util.List<String> names = new java.util.ArrayList<>();
+		if (text == null)
+		{
+			return names;
+		}
+		java.util.Set<String> seen = new java.util.HashSet<>();
+		for (String line : text.split("\n"))
+		{
+			String name = cleanName(line).split(" - |:|\\(", 2)[0].trim();
+			if (NAME.matcher(name).matches() && seen.add(normalise(name)))
+			{
+				names.add(name);
+			}
+		}
+		return names;
+	}
+
 	private static String normalise(String name)
 	{
 		return cleanName(name)

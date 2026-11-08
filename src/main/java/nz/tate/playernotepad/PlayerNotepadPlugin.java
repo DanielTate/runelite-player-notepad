@@ -24,6 +24,8 @@
  */
 package nz.tate.playernotepad;
 
+import com.google.gson.Gson;
+import com.google.gson.JsonSyntaxException;
 import com.google.inject.Provides;
 import java.awt.Rectangle;
 import java.awt.Shape;
@@ -101,6 +103,9 @@ public class PlayerNotepadPlugin extends Plugin
 	@Inject
 	private AreaSelectOverlay overlay;
 
+	@Inject
+	private Gson gson;
+
 	private PlayerNotepadPanel panel;
 	private NavigationButton navButton;
 
@@ -144,7 +149,8 @@ public class PlayerNotepadPlugin extends Plugin
 	protected void startUp()
 	{
 		selector = new AreaSelector(this::onAreaSelected);
-		panel = new PlayerNotepadPanel(config.notes(), this::saveNotes, selector::arm);
+		panel = new PlayerNotepadPanel(loadBook(), this::saveBook, System::currentTimeMillis, selector::arm,
+			config.clanOnly(), on -> configManager.setConfiguration(PlayerNotepadConfig.GROUP, PlayerNotepadConfig.CLAN_ONLY_KEY, on));
 
 		BufferedImage icon = ImageUtil.loadImageResource(getClass(), "icon.png");
 		navButton = NavigationButton.builder()
@@ -185,8 +191,23 @@ public class PlayerNotepadPlugin extends Plugin
 	@Subscribe
 	public void onConfigChanged(ConfigChanged event)
 	{
-		if (!PlayerNotepadConfig.GROUP.equals(event.getGroup())
-			|| !PlayerNotepadConfig.PLAYER_OPTION_KEY.equals(event.getKey()))
+		if (!PlayerNotepadConfig.GROUP.equals(event.getGroup()))
+		{
+			return;
+		}
+		if (PlayerNotepadConfig.CLAN_ONLY_KEY.equals(event.getKey()))
+		{
+			final boolean on = config.clanOnly();
+			SwingUtilities.invokeLater(() ->
+			{
+				if (panel != null)
+				{
+					panel.setClanOnly(on);
+				}
+			});
+			return;
+		}
+		if (!PlayerNotepadConfig.PLAYER_OPTION_KEY.equals(event.getKey()))
 		{
 			return;
 		}
@@ -267,16 +288,17 @@ public class PlayerNotepadPlugin extends Plugin
 	}
 
 	/**
-	 * Other players whose on-screen model touches {@code area}, left to right. Must be called on
-	 * the client thread.
+	 * Other players whose on-screen model touches {@code area}, left to right, and only clan
+	 * members when that's ticked. Must be called on the client thread.
 	 */
 	List<Player> playersInside(Rectangle area)
 	{
 		Player local = client.getLocalPlayer();
+		boolean clanOnly = config.clanOnly();
 		Map<Player, Double> found = new HashMap<>();
 		for (Player p : client.getTopLevelWorldView().players())
 		{
-			if (p == null || p == local || p.getName() == null)
+			if (p == null || p == local || p.getName() == null || clanOnly && !p.isClanMember())
 			{
 				continue;
 			}
@@ -303,7 +325,7 @@ public class PlayerNotepadPlugin extends Plugin
 				.collect(Collectors.toList());
 			if (names.isEmpty())
 			{
-				chat("Player Notepad: no players in that area.");
+				chat(config.clanOnly() ? "Player Notepad: no clan members in that area." : "Player Notepad: no players in that area.");
 				return;
 			}
 
@@ -318,7 +340,7 @@ public class PlayerNotepadPlugin extends Plugin
 				int added = panel.addNames(names, skipDuplicates);
 				int skipped = names.size() - added;
 				String msg = "Player Notepad: added " + added + (added == 1 ? " player" : " players")
-					+ (skipped > 0 ? " (" + skipped + " already listed)." : ".");
+					+ " to " + panel.openTitle() + (skipped > 0 ? " (" + skipped + " already listed)." : ".");
 				clientThread.invoke(() -> chat(msg));
 			});
 		});
@@ -346,8 +368,29 @@ public class PlayerNotepadPlugin extends Plugin
 		});
 	}
 
-	private void saveNotes(String text)
+	/** The saved notepads, or the single notepad of 1.0 as the first page if there's no save yet. */
+	private NotepadBook loadBook()
 	{
-		configManager.setConfiguration(PlayerNotepadConfig.GROUP, PlayerNotepadConfig.NOTES_KEY, text);
+		NotepadBook.Saved saved = null;
+		String json = configManager.getConfiguration(PlayerNotepadConfig.GROUP, PlayerNotepadConfig.BOOK_KEY);
+		if (json != null && !json.isEmpty())
+		{
+			try
+			{
+				saved = gson.fromJson(json, NotepadBook.Saved.class);
+			}
+			catch (JsonSyntaxException e)
+			{
+				// Keep the unreadable save rather than overwrite it, and start from the old notepad.
+				configManager.setConfiguration(PlayerNotepadConfig.GROUP,
+					PlayerNotepadConfig.BOOK_KEY + "-unreadable-" + System.currentTimeMillis(), json);
+			}
+		}
+		return NotepadBook.load(saved, config.notes(), System.currentTimeMillis());
+	}
+
+	private void saveBook(NotepadBook.Saved saved)
+	{
+		configManager.setConfiguration(PlayerNotepadConfig.GROUP, PlayerNotepadConfig.BOOK_KEY, gson.toJson(saved));
 	}
 }

@@ -82,4 +82,21 @@ public class NotepadTextTest
 	{
 		assertEquals("A\n", NotepadText.append("A\n", "<col=ffffff>", true));
 	}
+
+	@Test
+	public void namesSkipNotesAndRepeats()
+	{
+		String text = "Zezima - main tank\nLynx Titan: scout\nlynx_titan\n\nThis line is far too long to be a name\nWoox (level-126)\n";
+		org.junit.Assert.assertEquals(java.util.List.of("Zezima", "Lynx Titan", "Woox"), NotepadText.names(text));
+	}
+
+	@Test
+	public void editedTimesReadNaturally()
+	{
+		org.junit.Assert.assertEquals("just now", PlayerNotepadPanel.ago(0, 30_000));
+		org.junit.Assert.assertEquals("5m ago", PlayerNotepadPanel.ago(0, 5 * 60_000));
+		org.junit.Assert.assertEquals("3h ago", PlayerNotepadPanel.ago(0, 3 * 3_600_000));
+		org.junit.Assert.assertEquals("2d ago", PlayerNotepadPanel.ago(0, 2 * 86_400_000L));
+		org.junit.Assert.assertEquals("1 name", PlayerNotepadPanel.names(1));
+	}
 }
