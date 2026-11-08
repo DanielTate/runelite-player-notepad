@@ -3,7 +3,8 @@
 A RuneLite plugin by **DanielTate** that keeps a notepad of player names in the sidebar.
 
 Right-click a player and choose **Add to notepad**, or drag a box over the game to add every
-player inside it. The notepad is plain text, so you can write your own notes next to names.
+player inside it. Each notepad is plain text, so you can write your own notes next to names,
+and you can keep as many notepads as you like.
 
 ## Features
 
@@ -17,8 +18,13 @@ player inside it. The notepad is plain text, so you can write your own notes nex
 - Optional **hold key**: hold it and drag to select an area without using the button.
 - **Skip duplicates**: a name already on its own line isn't added again. Case, spaces,
   underscores and hyphens are treated as the same, as they are in game.
-- **Clear** empties the notepad, after asking first.
-- The notepad is saved with your RuneLite settings and survives restarts.
+- **Clan members only**: tick it under the notepad and Select area only adds players in your
+  clan. Right-clicking a player always adds them.
+- **Saved notepads**: give each notepad a title. **All notepads** lists them, newest first, with
+  a search box that finds titles and names. Open, rename, duplicate or delete them any time.
+- **Copy names** copies just the names, one per line, without your notes.
+- **Clear** empties the open notepad, after asking first.
+- Notepads save as you type, with your RuneLite settings, and survive restarts.
 
 ## Settings
 
@@ -28,6 +34,7 @@ player inside it. The notepad is plain text, so you can write your own notes nex
 | Chat and list menu option | On | "Add to notepad" on names in chat and the social lists |
 | Skip duplicates | On | Don't add a name that's already listed |
 | Area select hold key | Not set | Hold and drag to select players without the sidebar button |
+| Clan members only | Off | Select area only adds players in your clan (also a checkbox in the sidebar) |
 
 ## Privacy
 
@@ -43,4 +50,4 @@ makes no network requests.
 
 ## Version
 
-1.0.1
+1.1
