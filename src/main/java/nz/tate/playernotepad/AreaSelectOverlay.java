@@ -50,7 +50,8 @@ class AreaSelectOverlay extends Overlay
 	private static final Color BOX_FILL = new Color(0, 200, 255, 40);
 	private static final Color BOX_LINE = new Color(0, 200, 255, 220);
 	private static final Color PLAYER_LINE = new Color(255, 255, 0, 220);
-	private static final String HINT = "Drag to select players (Esc to cancel)";
+	private static final String HINT_HELD = "Drag to select players";
+	private static final String HINT_ARMED = HINT_HELD + " (Esc to cancel)";
 
 	private final Client client;
 	private final PlayerNotepadPlugin plugin;
@@ -99,7 +100,8 @@ class AreaSelectOverlay extends Overlay
 			if (mouse != null && mouse.getX() >= 0)
 			{
 				g.setFont(FontManager.getRunescapeSmallFont());
-				OverlayUtil.renderTextLocation(g, new Point(mouse.getX() + 14, mouse.getY() + 24), HINT, BOX_LINE);
+				OverlayUtil.renderTextLocation(g, new Point(mouse.getX() + 14, mouse.getY() + 24),
+					selector.isArmed() ? HINT_ARMED : HINT_HELD, BOX_LINE);
 			}
 		}
 		return null;

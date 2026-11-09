@@ -161,6 +161,20 @@ public class AreaSelectorTest
 	}
 
 	@Test
+	public void onlyArmingOffersEscape()
+	{
+		selector.setHeld(true);
+		assertTrue(selector.isWaiting());
+		assertFalse(selector.isArmed());
+
+		selector.arm();
+		assertTrue(selector.isArmed());
+
+		selector.keyPressed(new KeyEvent(source, KeyEvent.KEY_PRESSED, 0, 0, KeyEvent.VK_ESCAPE, KeyEvent.CHAR_UNDEFINED));
+		assertFalse(selector.isArmed());
+	}
+
+	@Test
 	public void escapeCancels()
 	{
 		selector.arm();

@@ -38,8 +38,8 @@ import net.runelite.client.input.MouseAdapter;
 /**
  * Turns a left-button drag on the game canvas into a selection rectangle.
  *
- * <p>Selection is active when it has been armed for one drag (the sidebar button) or while the
- * hold key is down. While active, the press, drag, release and click are consumed so the game
+ * <p>Selection is active when it has been armed for one drag (the sidebar button or press key) or
+ * while the hold key is down. While active, the press, drag, release and click are consumed so the game
  * never sees them: you don't walk, attack or rotate anything by drawing the box. Escape cancels.
  *
  * <p>Mouse and key events arrive on the AWT thread and the overlay reads the state on the client
@@ -85,6 +85,12 @@ class AreaSelector extends MouseAdapter implements KeyListener
 	boolean isWaiting()
 	{
 		return (armed || held) && start == null;
+	}
+
+	/** True when armed for one drag, which Esc can cancel. Holding the key isn't armed: letting go cancels that. */
+	boolean isArmed()
+	{
+		return armed;
 	}
 
 	/** The rectangle being dragged, or null when no drag is in progress. */
