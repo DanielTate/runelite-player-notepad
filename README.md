@@ -15,7 +15,9 @@ and you can keep as many notepads as you like.
   other player inside it is added, left to right, and a chat message says how many. The
   players the box will pick up are outlined while you drag. The drag never reaches the
   game, so you don't walk or click anything, and Esc cancels.
-- Optional **hold key**: hold it and drag to select an area without using the button.
+- Optional **hold key**: hold it and drag to select an area without using the button. Ctrl or an
+  unused F key works best, as a letter key can no longer be typed in chat.
+- Optional **press key**: press it once, then drag, the same as clicking the button.
 - **Skip duplicates**: a name already on its own line isn't added again. Case, spaces,
   underscores and hyphens are treated as the same, as they are in game.
 - **Clan members only**: tick it under the notepad and Select area only adds players in your
@@ -23,6 +25,8 @@ and you can keep as many notepads as you like.
 - **Saved notepads**: give each notepad a title. **All notepads** lists them, newest first, with
   a search box that finds titles and names. Open, rename, duplicate or delete them any time.
 - **Copy names** copies just the names, one per line, without your notes.
+- **Auto-copy names**: tick it under the notepad and the names are copied the same way whenever
+  players are added by Select area or the right-click menu.
 - **Clear** empties the open notepad, after asking first.
 - Notepads save as you type, with your RuneLite settings, and survive restarts.
 
@@ -34,7 +38,9 @@ and you can keep as many notepads as you like.
 | Chat and list menu option | On | "Add to notepad" on names in chat and the social lists |
 | Skip duplicates | On | Don't add a name that's already listed |
 | Area select hold key | Not set | Hold and drag to select players without the sidebar button |
+| Area select press key | Not set | Press once, then drag, the same as clicking the sidebar button |
 | Clan members only | Off | Select area only adds players in your clan (also a checkbox in the sidebar) |
+| Auto-copy names | Off | Copy the names to the clipboard whenever players are added (also a checkbox in the sidebar) |
 
 ## Privacy
 
@@ -50,4 +56,4 @@ makes no network requests.
 
 ## Version
 
-1.1
+1.2

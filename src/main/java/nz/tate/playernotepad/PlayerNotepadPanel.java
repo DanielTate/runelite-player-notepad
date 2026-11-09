@@ -91,6 +91,7 @@ class PlayerNotepadPanel extends PluginPanel
 	private final JTextArea textArea = new JTextArea();
 	private final JButton copyNames = new JButton("Copy names");
 	private final JCheckBox clanOnly = new JCheckBox("Clan members only");
+	private final JCheckBox autoCopy = new JCheckBox("Auto-copy names");
 	private final Timer saveTimer;
 	private final Timer copiedTimer;
 	/** Set while the text area is filled from a page, so that isn't taken for an edit. */
@@ -102,7 +103,7 @@ class PlayerNotepadPanel extends PluginPanel
 	private final JPanel rows = new JPanel();
 
 	PlayerNotepadPanel(NotepadBook book, Consumer<NotepadBook.Saved> saver, LongSupplier clock, Runnable onSelectArea,
-		boolean clanOnlyOn, Consumer<Boolean> onClanOnly)
+		boolean clanOnlyOn, Consumer<Boolean> onClanOnly, boolean autoCopyOn, Consumer<Boolean> onAutoCopy)
 	{
 		// No wrapping scroll pane: the text area and list bring their own, and fill the sidebar's height.
 		super(false);
@@ -114,7 +115,7 @@ class PlayerNotepadPanel extends PluginPanel
 		setBorder(new EmptyBorder(10, 10, 10, 10));
 		setBackground(ColorScheme.DARK_GRAY_COLOR);
 		viewPanel.setOpaque(false);
-		viewPanel.add(notepadView(onSelectArea, clanOnlyOn, onClanOnly), NOTEPAD_VIEW);
+		viewPanel.add(notepadView(onSelectArea, clanOnlyOn, onClanOnly, autoCopyOn, onAutoCopy), NOTEPAD_VIEW);
 		viewPanel.add(listView(), LIST_VIEW);
 		add(viewPanel, BorderLayout.CENTER);
 
@@ -147,7 +148,8 @@ class PlayerNotepadPanel extends PluginPanel
 		showPage();
 	}
 
-	private JComponent notepadView(Runnable onSelectArea, boolean clanOnlyOn, Consumer<Boolean> onClanOnly)
+	private JComponent notepadView(Runnable onSelectArea, boolean clanOnlyOn, Consumer<Boolean> onClanOnly,
+		boolean autoCopyOn, Consumer<Boolean> onAutoCopy)
 	{
 		JLabel back = link("‹ All notepads", "See, search and open your other notepads");
 		back.addMouseListener(click(this::showList));
@@ -191,7 +193,8 @@ class PlayerNotepadPanel extends PluginPanel
 		scroll.setBorder(BorderFactory.createLineBorder(FAINT));
 		scroll.setHorizontalScrollBarPolicy(ScrollPaneConstants.HORIZONTAL_SCROLLBAR_NEVER);
 
-		JButton selectArea = button("Select area", "Then drag a box over the game to add every player inside it");
+		JButton selectArea = button("Select area", "Then drag a box over the game to add every player inside it. "
+			+ "Set a key in the plugin's settings to skip this button");
 		selectArea.addActionListener(e -> onSelectArea.run());
 		copyNames.setToolTipText("Copy just the names, one per line, without your notes");
 		copyNames.setFocusPainted(false);
@@ -213,9 +216,16 @@ class PlayerNotepadPanel extends PluginPanel
 		clanOnly.setToolTipText("Select area only adds players in your clan");
 		clanOnly.addActionListener(e -> onClanOnly.accept(clanOnly.isSelected()));
 
+		autoCopy.setSelected(autoCopyOn);
+		autoCopy.setOpaque(false);
+		autoCopy.setFocusPainted(false);
+		autoCopy.setToolTipText("Copy the names to the clipboard whenever players are added");
+		autoCopy.addActionListener(e -> onAutoCopy.accept(autoCopy.isSelected()));
+
 		JPanel footer = column(4);
 		footer.add(buttons);
 		footer.add(clanOnly);
+		footer.add(autoCopy);
 
 		JPanel view = new JPanel(new BorderLayout(0, GAP));
 		view.setOpaque(false);
@@ -397,6 +407,12 @@ class PlayerNotepadPanel extends PluginPanel
 			textArea.setText(updated);
 			textArea.setCaretPosition(updated.length());
 		}
+
+		// Even when every name was already listed, so the clipboard matches the notepad you just used.
+		if (autoCopy.isSelected())
+		{
+			copyNames();
+		}
 		return added;
 	}
 
@@ -410,6 +426,12 @@ class PlayerNotepadPanel extends PluginPanel
 	void setClanOnly(boolean on)
 	{
 		clanOnly.setSelected(on);
+	}
+
+	/** Keeps the checkbox in step when the setting changes from the config panel. */
+	void setAutoCopy(boolean on)
+	{
+		autoCopy.setSelected(on);
 	}
 
 	/** Writes any pending edit straight away. Called when the plugin shuts down. */
@@ -552,9 +574,17 @@ class PlayerNotepadPanel extends PluginPanel
 		}
 		else
 		{
-			Toolkit.getDefaultToolkit().getSystemClipboard()
-				.setContents(new StringSelection(String.join("\n", names)), null);
-			copyNames.setText("Copied " + names.size());
+			try
+			{
+				Toolkit.getDefaultToolkit().getSystemClipboard()
+					.setContents(new StringSelection(String.join("\n", names)), null);
+				copyNames.setText("Copied " + names.size());
+			}
+			catch (IllegalStateException e)
+			{
+				// Another program is holding the clipboard.
+				copyNames.setText("Copy failed");
+			}
 		}
 		copiedTimer.restart();
 	}

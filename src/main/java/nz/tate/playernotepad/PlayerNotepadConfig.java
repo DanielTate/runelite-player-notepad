@@ -36,6 +36,7 @@ public interface PlayerNotepadConfig extends Config
 	String NOTES_KEY = "notes";
 	String PLAYER_OPTION_KEY = "playerOption";
 	String CLAN_ONLY_KEY = "clanOnly";
+	String AUTO_COPY_KEY = "autoCopy";
 	/** The saved notepad pages, as JSON. Replaces {@link #NOTES_KEY} from 1.1. */
 	String BOOK_KEY = "notepads";
 
@@ -77,6 +78,7 @@ public interface PlayerNotepadConfig extends Config
 		keyName = "selectKey",
 		name = "Area select hold key",
 		description = "Hold this key and drag on the game to add every player in the box. "
+			+ "Ctrl or an unused F key works best, as a letter key can no longer be typed in chat. "
 			+ "The Select area button in the sidebar works without setting one",
 		position = 4
 	)
@@ -86,13 +88,38 @@ public interface PlayerNotepadConfig extends Config
 	}
 
 	@ConfigItem(
+		keyName = "armKey",
+		name = "Area select press key",
+		description = "Press this key once, then drag on the game to add every player in the box, "
+			+ "the same as clicking the Select area button. Esc cancels. "
+			+ "An unused F key works best, as a letter key can no longer be typed in chat",
+		position = 5
+	)
+	default Keybind armKey()
+	{
+		return Keybind.NOT_SET;
+	}
+
+	@ConfigItem(
 		keyName = CLAN_ONLY_KEY,
 		name = "Clan members only",
 		description = "Area select only adds players in your clan. Right-clicking a player always adds them. "
 			+ "Also a checkbox in the sidebar",
-		position = 5
+		position = 6
 	)
 	default boolean clanOnly()
+	{
+		return false;
+	}
+
+	@ConfigItem(
+		keyName = AUTO_COPY_KEY,
+		name = "Auto-copy names",
+		description = "Copy the open notepad's names to the clipboard whenever players are added by "
+			+ "area select or the right-click menu. Also a checkbox in the sidebar",
+		position = 7
+	)
+	default boolean autoCopy()
 	{
 		return false;
 	}

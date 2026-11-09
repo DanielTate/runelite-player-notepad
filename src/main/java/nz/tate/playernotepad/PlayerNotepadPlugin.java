@@ -133,6 +133,18 @@ public class PlayerNotepadPlugin extends Plugin
 		}
 	};
 
+	private final HotkeyListener armKeyListener = new HotkeyListener(() -> config.armKey())
+	{
+		@Override
+		public void hotkeyPressed()
+		{
+			if (selector != null)
+			{
+				selector.arm();
+			}
+		}
+	};
+
 	/**
 	 * Player names by menu identifier, captured when the menu opens, so the click still works
 	 * if the player walks out of view between opening the menu and clicking.
@@ -150,7 +162,8 @@ public class PlayerNotepadPlugin extends Plugin
 	{
 		selector = new AreaSelector(this::onAreaSelected);
 		panel = new PlayerNotepadPanel(loadBook(), this::saveBook, System::currentTimeMillis, selector::arm,
-			config.clanOnly(), on -> configManager.setConfiguration(PlayerNotepadConfig.GROUP, PlayerNotepadConfig.CLAN_ONLY_KEY, on));
+			config.clanOnly(), on -> configManager.setConfiguration(PlayerNotepadConfig.GROUP, PlayerNotepadConfig.CLAN_ONLY_KEY, on),
+			config.autoCopy(), on -> configManager.setConfiguration(PlayerNotepadConfig.GROUP, PlayerNotepadConfig.AUTO_COPY_KEY, on));
 
 		BufferedImage icon = ImageUtil.loadImageResource(getClass(), "icon.png");
 		navButton = NavigationButton.builder()
@@ -164,6 +177,7 @@ public class PlayerNotepadPlugin extends Plugin
 		mouseManager.registerMouseListener(selector);
 		keyManager.registerKeyListener(selector);
 		keyManager.registerKeyListener(holdKeyListener);
+		keyManager.registerKeyListener(armKeyListener);
 		overlayManager.add(overlay);
 
 		if (config.playerOption())
@@ -177,6 +191,7 @@ public class PlayerNotepadPlugin extends Plugin
 	{
 		clientThread.invoke(() -> menuManager.get().removePlayerMenuItem(ADD_OPTION));
 		overlayManager.remove(overlay);
+		keyManager.unregisterKeyListener(armKeyListener);
 		keyManager.unregisterKeyListener(holdKeyListener);
 		keyManager.unregisterKeyListener(selector);
 		mouseManager.unregisterMouseListener(selector);
@@ -203,6 +218,18 @@ public class PlayerNotepadPlugin extends Plugin
 				if (panel != null)
 				{
 					panel.setClanOnly(on);
+				}
+			});
+			return;
+		}
+		if (PlayerNotepadConfig.AUTO_COPY_KEY.equals(event.getKey()))
+		{
+			final boolean on = config.autoCopy();
+			SwingUtilities.invokeLater(() ->
+			{
+				if (panel != null)
+				{
+					panel.setAutoCopy(on);
 				}
 			});
 			return;

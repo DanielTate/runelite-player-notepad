@@ -1,5 +1,15 @@
 # Changelog
 
+## 1.2
+
+- **Area select press key**: a new setting. Press the key once, then drag, the same as clicking
+  the Select area button.
+- **Auto-copy names**: a checkbox under the notepad (and a setting) that copies the names to your
+  clipboard whenever players are added.
+- The hold key setting now suggests which keys work best, and the Select area button mentions you
+  can set a key.
+- The "Esc to cancel" hint now only shows when Esc actually cancels.
+
 ## 1.1
 
 - **Saved notepads.** Keep as many notepads as you like, each with its own title. They save as
